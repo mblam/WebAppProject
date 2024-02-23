@@ -20,7 +20,7 @@ class Request:
             mini_split = elem.split(' ')
             if mini_split[0].endswith(":"):
                 self.headers[mini_split[0].rstrip(":")] = mini_split[1]
-            if (mini_split[0] == "Set-Cookie:") or (mini_split[0] == "Cookie:"):
+            if (mini_split[0].lower() == "set-cookie:") or (mini_split[0].lower() == "cookie:"):
                 further_split = mini_split[1].split("=")
                 self.cookies[further_split[0]] = further_split[1]
 
