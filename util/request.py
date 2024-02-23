@@ -31,6 +31,9 @@ class Request:
                     mini_split = elem.split("=")
                     self.cookies[mini_split[0]] = mini_split[1]
 
+        if "Content-Length" in self.headers:
+            self.body += splitting[-1].encode()
+
 
 def test1():
     request = Request(b'GET / HTTP/1.1\r\nHost: localhost:8080\r\nConnection: keep-alive\r\n\r\n')
@@ -55,12 +58,14 @@ def test2():
     assert "animal" in request.cookies
     assert request.cookies["animal"] == "cat"
 
-# Request(b'POST /path HTTP/1.1\r\nContent-Type: text/plain\r\nCookie: color=pink; day=friday\r\nContent-Length: 5\r\n\r\nhello')
-# assert request.method == "POST"
-# assert "Content-Type" in request.headers
-# assert request.body == b"hello"
-# my header dict should look as following
+def test3():
+    request = Request(b'POST /path HTTP/1.1\r\nContent-Type: text/plain\r\nCookie: color=pink; day=friday\r\nContent-Length: 5\r\n\r\nhello')
+    assert request.method == "POST"
+    assert "Content-Type" in request.headers
+    assert request.body == b"hello"
+
 
 if __name__ == '__main__':
     test1()
     test2()
+    test3()
