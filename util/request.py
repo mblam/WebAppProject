@@ -7,6 +7,7 @@ class Request:
         splitting = decoding.split('\r\n')
         split_one = splitting[0].split(' ')
         body = splitting[-1]
+        splitting.remove(splitting[-1])
         # print(body)
         # print(splitting)
 
@@ -25,6 +26,8 @@ class Request:
                 self.headers[mini_split[0]] = mini_split[1]
             elif "ookie" in elem:
                 self.headers[elem[:elem.index(":")]] = elem.split(": ")[1]
+            else:
+                pass
 
         for key in self.headers:
             if "ookie" in key:
