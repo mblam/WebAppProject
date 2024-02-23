@@ -3,12 +3,28 @@ class Request:
     def __init__(self, request: bytes):
         # TODO: parse the bytes of the request and populate the following instance variables
 
+        decoding = request.decode()
+        splitting = decoding.split('\r\n')
+        split_one = splitting[0].split(' ')
+
         self.body = b""
-        self.method = ""
-        self.path = ""
-        self.http_version = ""
+        self.method = split_one[0]
+        self.path = split_one[1]
+        self.http_version = split_one[2]
+        splitting.remove(splitting[0])
+
         self.headers = {}
         self.cookies = {}
+
+        for elem in splitting:
+            mini_split = elem.split(' ')
+            if mini_split[0].endswith(":"):
+                self.headers[mini_split[0].rstrip(":")] = mini_split[1]
+
+        for elem in splitting:
+            if '=' in elem:
+                mini_split = elem.split("=")
+                self.cookies[mini_split[0]] = mini_split[1]
 
 
 def test1():
