@@ -17,12 +17,19 @@ class Request:
         self.cookies = {}
 
         for elem in splitting:
-            mini_split = elem.split(' ')
-            if mini_split[0].endswith(":"):
-                self.headers[mini_split[0].rstrip(":")] = mini_split[1]
-            if (mini_split[0].lower() == "set-cookie:") or (mini_split[0].lower() == "cookie:"):
-                further_split = mini_split[1].split("=")
-                self.cookies[further_split[0]] = further_split[1]
+            if "ookie" not in elem:
+                mini_split = elem.split(' ')
+                if mini_split[0].endswith(":"):
+                    self.headers[mini_split[0].rstrip(":")] = mini_split[1]
+            else:
+                self.headers[elem[:elem.index(":")]] = elem.split(": ")[1]
+
+        for key in self.headers:
+            if "ookie" in key:
+                cookies = self.headers[key].split("; ")
+                for elem in cookies:
+                    mini_split = elem.split("=")
+                    self.cookies[mini_split[0]] = mini_split[1]
 
 
 def test1():
@@ -38,5 +45,22 @@ def test1():
     # test using a POST request. Also, ensure that the types of all values are correct
 
 
+def test2():
+    request = Request(b'GET / HTTP/1.1\r\nHost: www.example.re\r\nCookie: animal=cat; candy=chocolate\r\n\r\n')
+    assert request.method == "GET"
+    assert "Host" in request.headers
+    assert request.body == b""  # There is no body for this request.
+    assert "Cookie" in request.headers
+    assert request.headers["Cookie"] == "animal=cat; candy=chocolate"
+    assert "animal" in request.cookies
+    assert request.cookies["animal"] == "cat"
+
+# Request(b'POST /path HTTP/1.1\r\nContent-Type: text/plain\r\nCookie: color=pink; day=friday\r\nContent-Length: 5\r\n\r\nhello')
+# assert request.method == "POST"
+# assert "Content-Type" in request.headers
+# assert request.body == b"hello"
+# my header dict should look as following
+
 if __name__ == '__main__':
     test1()
+    test2()
