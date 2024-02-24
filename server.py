@@ -13,7 +13,14 @@ class MyTCPHandler(socketserver.BaseRequestHandler):
         request = Request(received_data)
 
         # TODO: Parse the HTTP request and use self.request.sendall(response) to send your response
+        response = b''
 
+        response += (request.http_version + " 200 OK\r\n").encode()
+        for header in request.headers:
+            response += (header + ": " + request.headers[header]).encode()
+        response += ("\r\n\r\n" + request.body.decode()).encode()
+
+        self.request.sendall(response)
 
 def main():
     host = "0.0.0.0"

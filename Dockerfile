@@ -10,4 +10,4 @@ RUN pip3 install -r requirements.txt
 
 EXPOSE 8000
 
-CMD python3 -u app.py
+CMD python3 -u server.py
