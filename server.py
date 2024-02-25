@@ -116,6 +116,66 @@ class MyTCPHandler(socketserver.BaseRequestHandler):
             response += ("Content-Type: image/jpeg\r\nContent-Length:" + the_bytes + "\r\n\r\n").encode()
 
             response += open("public/image/cat.jpg", "rb").read()
+        elif request.path == "/public/image/dog.jpg":
+            response += (request.http_version + " 200 OK\r\n").encode()
+
+            for header in request.headers:
+                response += (header + ": " + request.headers[header] + "\r\n").encode()
+            response += "X-Content-Type-Options: nosniff\r\n".encode()
+
+            img = open("public/image/dog.jpg", "rb")
+            the_bytes = str(len(img.read()))
+            response += ("Content-Type: image/jpeg\r\nContent-Length:" + the_bytes + "\r\n\r\n").encode()
+
+            response += open("public/image/dog.jpg", "rb").read()
+        elif request.path == "/public/image/elephant.jpg":
+            response += (request.http_version + " 200 OK\r\n").encode()
+
+            for header in request.headers:
+                response += (header + ": " + request.headers[header] + "\r\n").encode()
+            response += "X-Content-Type-Options: nosniff\r\n".encode()
+
+            img = open("public/image/elephant.jpg", "rb")
+            the_bytes = str(len(img.read()))
+            response += ("Content-Type: image/jpeg\r\nContent-Length:" + the_bytes + "\r\n\r\n").encode()
+
+            response += open("public/image/elephant.jpg", "rb").read()
+        elif request.path == "/public/image/elephant-small.jpg":
+            response += (request.http_version + " 200 OK\r\n").encode()
+
+            for header in request.headers:
+                response += (header + ": " + request.headers[header] + "\r\n").encode()
+            response += "X-Content-Type-Options: nosniff\r\n".encode()
+
+            img = open("public/image/elephant-small.jpg", "rb")
+            the_bytes = str(len(img.read()))
+            response += ("Content-Type: image/jpeg\r\nContent-Length:" + the_bytes + "\r\n\r\n").encode()
+
+            response += open("public/image/elephant-small.jpg", "rb").read()
+        elif request.path == "/public/image/flamingo.jpg":
+            response += (request.http_version + " 200 OK\r\n").encode()
+
+            for header in request.headers:
+                response += (header + ": " + request.headers[header] + "\r\n").encode()
+            response += "X-Content-Type-Options: nosniff\r\n".encode()
+
+            img = open("public/image/flamingo.jpg", "rb")
+            the_bytes = str(len(img.read()))
+            response += ("Content-Type: image/jpeg\r\nContent-Length:" + the_bytes + "\r\n\r\n").encode()
+
+            response += open("public/image/flamingo.jpg", "rb").read()
+        elif request.path == "/public/image/kitten.jpg":
+            response += (request.http_version + " 200 OK\r\n").encode()
+
+            for header in request.headers:
+                response += (header + ": " + request.headers[header] + "\r\n").encode()
+            response += "X-Content-Type-Options: nosniff\r\n".encode()
+
+            img = open("public/image/kitten.jpg", "rb")
+            the_bytes = str(len(img.read()))
+            response += ("Content-Type: image/jpeg\r\nContent-Length:" + the_bytes + "\r\n\r\n").encode()
+
+            response += open("public/image/kitten.jpg", "rb").read()
         else:
             response += (request.http_version + " 404 Not Found\r\n").encode()
 
