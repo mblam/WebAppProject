@@ -3,13 +3,19 @@ import json
 import random
 from util.request import Request
 from pymongo import MongoClient
+from util.router import Router
+from util.the_paths import Paths
 
 mongo_client = MongoClient("megandatabase")
 db = mongo_client["cse312"]
 chat_collection = db["chat"]
 
+
+
 class MyTCPHandler(socketserver.BaseRequestHandler):
 
+    router = Router()
+    router.add_route("GET", "/$", Paths.serve_root)
     def handle(self):
         received_data = self.request.recv(2048)
         print(self.client_address)
