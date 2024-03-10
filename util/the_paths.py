@@ -1,11 +1,15 @@
 from util.request import Request
 from pymongo import MongoClient
+from util.auth import extract_credentials
+from util.auth import validate_password
+import bcrypt
 import json
 import random
 
 mongo_client = MongoClient("megandatabase")
 db = mongo_client["cse312"]
 chat_collection = db["chat"]
+user_collection = db["user-list"]
 
 class Paths:
 
@@ -155,6 +159,44 @@ class Paths:
 
         response += ("Content-Type: application/json\r\nContent-Length: " + str(
             len(json_encoded)) + "\r\n\r\n").encode() + json_encoded
+
+        return response
+
+    def register_request(self, request: Request):
+        response = b''
+        response += (request.http_version + " 302 Found\r\n").encode()
+
+        for header in request.headers:
+            response += (header + ": " + request.headers[header] + "\r\n").encode()
+        response += "X-Content-Type-Options: nosniff\r\n".encode()
+
+        credentials = extract_credentials(request)
+        if validate_password(credentials[1]):
+            the_bytes = credentials[1].encode()
+            the_salt = bcrypt.gensalt()
+            the_hash = bcrypt.hashpw(the_bytes,the_salt)
+
+            store_this = {"username": credentials[0], "salt": the_salt, "hash": the_hash}
+            user_collection.insert_one(store_this)
+
+        response += "Content-Length: 0\r\nLocation: /\r\n\r\n".encode()
+
+        return response
+
+    def login_request(self, request: Request):
+        response = b''
+        response += (request.http_version + " 302 Found\r\n").encode()
+
+        for header in request.headers:
+            response += (header + ": " + request.headers[header] + "\r\n").encode()
+        response += "X-Content-Type-Options: nosniff\r\n".encode()
+
+        
+
+        return response
+
+    def logout_request(self, request: Request):
+        response = b''
 
         return response
 

@@ -15,7 +15,7 @@ class MyTCPHandler(socketserver.BaseRequestHandler):
     paths = Paths()
     router = Router()
 
-    router.add_route("GET","/public/favicon.ico$", paths.serve_favicon)
+    router.add_route("GET", "/public/favicon.ico$", paths.serve_favicon)
     router.add_route("GET", "/$", paths.serve_root)
     router.add_route("GET", "/public/style.css$", paths.serve_css)
 
@@ -27,6 +27,10 @@ class MyTCPHandler(socketserver.BaseRequestHandler):
     router.add_route("POST", "/chat-messages$", paths.post_message)
     router.add_route("GET", "/chat-messages$", paths.get_messages)
     router.add_route("GET", "/chat-messages/$", paths.get_messages)
+
+    router.add_route("POST", "/register$", paths.register_request)
+    router.add_route("POST", "/login$", paths.login_request)
+    router.add_route("POST", "/logout$", paths.logout_request)
 
     def handle(self):
         received_data = self.request.recv(2048)
