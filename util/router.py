@@ -24,6 +24,7 @@ class Router:
                 if re.match(split[1], the_request.path):
                     func = self.all_routes[elem]
                     response = func(the_request)
+                    break
 
         if response == b'':
             response = self.paths.serve_error(the_request)

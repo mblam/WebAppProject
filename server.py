@@ -19,20 +19,14 @@ class MyTCPHandler(socketserver.BaseRequestHandler):
     router.add_route("GET", "/$", paths.serve_root)
     router.add_route("GET", "/public/style.css$", paths.serve_css)
 
-    # router.add_route("GET", "/public/image/cat.jpg$", paths.serve_image)
-    # router.add_route("GET", "/public/image/dog.jpg$", paths.serve_image)
-    # router.add_route("GET", "/public/image/eagle.jpg$", paths.serve_image)
-    # router.add_route("GET", "/public/image/elephant.jpg$", paths.serve_image)
-    # router.add_route("GET", "/public/image/elephant-small.jpg$", paths.serve_image)
-    # router.add_route("GET", "/public/image/flamingo.jpg$", paths.serve_image)
-    # router.add_route("GET", "/public/image/kitten.jpg$", paths.serve_image)
-    router.add_route("GET", "/public/image.", paths.serve_image)
+    router.add_route("GET", "/public/image/.", paths.serve_image)
 
     router.add_route("GET", "/public/functions.js$", paths.serve_js)
     router.add_route("GET", "/public/webrtc.js$", paths.serve_js)
 
     router.add_route("POST", "/chat-messages$", paths.post_message)
     router.add_route("GET", "/chat-messages$", paths.get_messages)
+    router.add_route("GET", "/chat-messages/$", paths.get_messages)
 
     def handle(self):
         received_data = self.request.recv(2048)
