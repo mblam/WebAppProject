@@ -2,6 +2,7 @@ from util.request import Request
 from pymongo import MongoClient
 from util.auth import extract_credentials
 from util.auth import validate_password
+import string
 import bcrypt
 import json
 import random
@@ -176,7 +177,7 @@ class Paths:
             the_salt = bcrypt.gensalt()
             the_hash = bcrypt.hashpw(the_bytes,the_salt)
 
-            store_this = {"username": credentials[0], "salt": the_salt, "hash": the_hash}
+            store_this = {"username": credentials[0], "hash": the_hash}
             user_collection.insert_one(store_this)
 
         response += "Content-Length: 0\r\nLocation: /\r\n\r\n".encode()
@@ -191,12 +192,29 @@ class Paths:
             response += (header + ": " + request.headers[header] + "\r\n").encode()
         response += "X-Content-Type-Options: nosniff\r\n".encode()
 
-        
+        # making auth token just in case if needed
+        big_list = list(string.ascii_letters + string.digits)
+        i = 0
+        auth_token = ""
+        while i != 22:
+            auth_token += random.choices(big_list)[0]
+            i += 1
+
+        credentials = extract_credentials(request)
+        find_user = user_collection.find_one({"username": credentials[0]})
+        if find_user is not None:
+            the_bytes = credentials[1].encode()
+            if bcrypt.checkpw(the_bytes, find_user["hash"]):
+                response += ("Set-Cookie: Auth Token=" + auth_token + "; HttpOnly; Max-Age=3600\r\n").encode()
+
+        response += "Content-Length: 0\r\nLocation: /\r\n\r\n".encode()
 
         return response
 
     def logout_request(self, request: Request):
         response = b''
+        response += (request.http_version + " 302 Found\r\n").encode()
+
 
         return response
 
