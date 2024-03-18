@@ -140,9 +140,16 @@ class Paths:
             store_this = {"message": message, "username": "Guest", "id": uniqueID}
             chat_collection.insert_one(store_this)
         elif ("Auth Token" in request.cookies.keys()) and (request.cookies["Auth Token"] != ""):
-            find_user = user_collection.find_one({"authtoken": request.cookies["Auth Token"]})
-            store_this = {"message": message, "username": find_user["username"], "id": uniqueID}
-            chat_collection.insert_one(store_this)
+            sha256 = hashlib.sha256()
+            sha256.update(request.cookies["Auth Token"].encode())
+            hashing = sha256.hexdigest()
+            find_user = user_collection.find_one({"authtoken": hashing})
+            if find_user is not None:
+                store_this = {"message": message, "username": find_user["username"], "id": uniqueID}
+                chat_collection.insert_one(store_this)
+            else:
+                store_this = {"message": message, "username": "Guest", "id": uniqueID}
+                chat_collection.insert_one(store_this)
 
         # store_this = {"message": message, "username": "Guest", "id": uniqueID}
         # chat_collection.insert_one(store_this)
@@ -183,6 +190,7 @@ class Paths:
         response += "X-Content-Type-Options: nosniff\r\n".encode()
 
         credentials = extract_credentials(request)
+        credentials[0].replace('&', "&amp;").replace('<', "&lt;").replace('>', "&gt;")
         if validate_password(credentials[1]):
             the_bytes = credentials[1].encode()
             the_salt = bcrypt.gensalt()
@@ -218,6 +226,7 @@ class Paths:
         hashing = sha256.hexdigest()
 
         credentials = extract_credentials(request)
+        credentials[0].replace('&', "&amp;").replace('<', "&lt;").replace('>', "&gt;")
         find_user = user_collection.find_one({"username": credentials[0]})
         if find_user is not None:
             the_bytes = credentials[1].encode()
@@ -263,16 +272,14 @@ class Paths:
             sha256.update(request.cookies["Auth Token"].encode())
             hashing = sha256.hexdigest()
             find_user = user_collection.find_one({"authtoken": hashing})
-            if find_user is not None:
+            find_message = chat_collection.find_one({"id": chat_id})
+            if find_user["username"] == find_message["username"]:
                 chat_collection.delete_one({"id": chat_id})
-
                 response += " 200 OK\r\n".encode()
-
                 for header in request.headers:
                     response += (header + ": " + request.headers[header] + "\r\n").encode()
                 response += "X-Content-Type-Options: nosniff\r\n".encode()
-
-                response += "Content-Type: text/plain\r\nContent-Length: 25\r\n\r\nMessage has been deleted.".encode()
+                response += "Content-Type: text/plain\r\nContent-Length: 16\r\n\r\nMessage deleted."
             else:
                 response += " 403 Forbidden\r\n".encode()
 
@@ -287,7 +294,7 @@ class Paths:
             for header in request.headers:
                 response += (header + ": " + request.headers[header] + "\r\n").encode()
             response += "X-Content-Type-Options: nosniff\r\n".encode()
-            
+
             response += "Content-Type: text/plain\r\nContent-Length: 20\r\n\r\nYou can not do that.".encode()
 
         return response

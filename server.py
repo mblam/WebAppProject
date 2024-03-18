@@ -26,8 +26,7 @@ class MyTCPHandler(socketserver.BaseRequestHandler):
 
     router.add_route("POST", "/chat-messages$", paths.post_message)
     router.add_route("GET", "/chat-messages$", paths.get_messages)
-    router.add_route("GET", "/chat-messages/$", paths.get_messages)
-    router.add_route("DELETE", "/chat-message/.", paths.delete_message)
+    router.add_route("DELETE", "/chat-messages/.", paths.delete_message)
 
     router.add_route("POST", "/register$", paths.register_request)
     router.add_route("POST", "/login$", paths.login_request)
