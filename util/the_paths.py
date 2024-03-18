@@ -4,6 +4,7 @@ from util.auth import extract_credentials
 from util.auth import validate_password
 import string
 import bcrypt
+import hashlib
 import json
 import random
 
@@ -135,8 +136,16 @@ class Paths:
 
         message = json.dumps(the_body["message"]).replace('&', "&amp;").replace('<', "&lt;").replace('>', "&gt;")
 
-        store_this = {"message": message, "username": "Guest", "id": uniqueID}
-        chat_collection.insert_one(store_this)
+        if ("Auth Token" not in request.cookies.keys()) or (request.cookies["Auth Token"] == ""):
+            store_this = {"message": message, "username": "Guest", "id": uniqueID}
+            chat_collection.insert_one(store_this)
+        elif ("Auth Token" in request.cookies.keys()) and (request.cookies["Auth Token"] != ""):
+            find_user = user_collection.find_one({"authtoken": request.cookies["Auth Token"]})
+            store_this = {"message": message, "username": find_user["username"], "id": uniqueID}
+            chat_collection.insert_one(store_this)
+
+        # store_this = {"message": message, "username": "Guest", "id": uniqueID}
+        # chat_collection.insert_one(store_this)
 
         response += "X-Content-Type-Options: nosniff\r\n".encode()
         response += "Content-Type: text/plain\r\nContent-Length: 26\r\n\r\nFrontend will ignore this.".encode()
@@ -167,6 +176,8 @@ class Paths:
         response = b''
         response += (request.http_version + " 302 Found\r\n").encode()
 
+        request.headers.pop("Host")
+        request.headers["Content-Length"] = "0"
         for header in request.headers:
             response += (header + ": " + request.headers[header] + "\r\n").encode()
         response += "X-Content-Type-Options: nosniff\r\n".encode()
@@ -177,10 +188,10 @@ class Paths:
             the_salt = bcrypt.gensalt()
             the_hash = bcrypt.hashpw(the_bytes,the_salt)
 
-            store_this = {"username": credentials[0], "hash": the_hash}
+            store_this = {"username": credentials[0], "hash": the_hash, "authtoken": ""}
             user_collection.insert_one(store_this)
 
-        response += "Content-Length: 0\r\nLocation: /\r\n\r\n".encode()
+        response += "Content-Type: application/json\r\nLocation: /\r\n\r\n".encode()
 
         return response
 
@@ -188,6 +199,8 @@ class Paths:
         response = b''
         response += (request.http_version + " 302 Found\r\n").encode()
 
+        request.headers.pop("Host")
+        request.headers["Content-Length"] = "0"
         for header in request.headers:
             response += (header + ": " + request.headers[header] + "\r\n").encode()
         response += "X-Content-Type-Options: nosniff\r\n".encode()
@@ -199,6 +212,10 @@ class Paths:
         while i != 22:
             auth_token += random.choices(big_list)[0]
             i += 1
+        # hashing auth token
+        sha256 = hashlib.sha256()
+        sha256.update(auth_token.encode())
+        hashing = sha256.hexdigest()
 
         credentials = extract_credentials(request)
         find_user = user_collection.find_one({"username": credentials[0]})
@@ -207,14 +224,71 @@ class Paths:
             if bcrypt.checkpw(the_bytes, find_user["hash"]):
                 response += ("Set-Cookie: Auth Token=" + auth_token + "; HttpOnly; Max-Age=3600\r\n").encode()
 
-        response += "Content-Length: 0\r\nLocation: /\r\n\r\n".encode()
+        user_collection.update_one({"username": credentials[0]}, {'$set': {"authtoken": hashing}})
+
+        response += "Content-Type: application/json\r\nLocation: /\r\n\r\n".encode()
 
         return response
 
     def logout_request(self, request: Request):
         response = b''
         response += (request.http_version + " 302 Found\r\n").encode()
+        auth_token = request.cookies["Auth Token"]
+        sha256 = hashlib.sha256()
+        sha256.update(auth_token.encode())
+        hashing = sha256.hexdigest()
 
+        request.headers.pop("Host")
+        request.headers["Content-Length"] = "0"
+        request.headers["Set-Cookie"] = "Auth Token= """
+        request.cookies["Auth Token"] = ""
+        for header in request.headers:
+            response += (header + ": " + request.headers[header] + "\r\n").encode()
+        response += "X-Content-Type-Options: nosniff\r\n".encode()
+
+        user_collection.update_one({"authtoken": hashing}, {'$set': {"authtoken": ""}})
+
+        response += "Content-Type: application/json\r\nLocation: /\r\n\r\n".encode()
+
+        return response
+
+    def delete_message(self, request: Request):
+        response = b''
+        response += request.http_version.encode()
+        sha256 = hashlib.sha256()
+
+        chat_id = request.path[15:len(request.path)]
+
+        if ("Auth Token" in request.cookies.keys()) and (request.cookies["Auth Token"] != ""):
+            sha256.update(request.cookies["Auth Token"].encode())
+            hashing = sha256.hexdigest()
+            find_user = user_collection.find_one({"authtoken": hashing})
+            if find_user is not None:
+                chat_collection.delete_one({"id": chat_id})
+
+                response += " 200 OK\r\n".encode()
+
+                for header in request.headers:
+                    response += (header + ": " + request.headers[header] + "\r\n").encode()
+                response += "X-Content-Type-Options: nosniff\r\n".encode()
+
+                response += "Content-Type: text/plain\r\nContent-Length: 25\r\n\r\nMessage has been deleted.".encode()
+            else:
+                response += " 403 Forbidden\r\n".encode()
+
+                for header in request.headers:
+                    response += (header + ": " + request.headers[header] + "\r\n").encode()
+                response += "X-Content-Type-Options: nosniff\r\n".encode()
+
+                response += "Content-Type: text/plain\r\nContent-Length: 20\r\n\r\nYou can not do that.".encode()
+        else:
+            response += " 403 Forbidden\r\n".encode()
+
+            for header in request.headers:
+                response += (header + ": " + request.headers[header] + "\r\n").encode()
+            response += "X-Content-Type-Options: nosniff\r\n".encode()
+            
+            response += "Content-Type: text/plain\r\nContent-Length: 20\r\n\r\nYou can not do that.".encode()
 
         return response
 
