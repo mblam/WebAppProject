@@ -151,9 +151,6 @@ class Paths:
                 store_this = {"message": message, "username": "Guest", "id": uniqueID}
                 chat_collection.insert_one(store_this)
 
-        # store_this = {"message": message, "username": "Guest", "id": uniqueID}
-        # chat_collection.insert_one(store_this)
-
         response += "X-Content-Type-Options: nosniff\r\n".encode()
         response += "Content-Type: text/plain\r\nContent-Length: 26\r\n\r\nFrontend will ignore this.".encode()
 
