@@ -10,6 +10,7 @@ from util.the_paths import Paths
 # db = mongo_client["cse312"]
 # chat_collection = db["chat"]
 
+
 class MyTCPHandler(socketserver.BaseRequestHandler):
 
     paths = Paths()
