@@ -12,6 +12,8 @@ mongo_client = MongoClient("megandatabase")
 db = mongo_client["cse312"]
 chat_collection = db["chat"]
 user_collection = db["user-list"]
+xsrf_collection = db["xsrf"]
+
 
 class Paths:
 
@@ -34,12 +36,43 @@ class Paths:
 
         open_file = open("public/index.html", "rb").read()
         edit = open_file.replace("{{visits}}".encode(), request.cookies["visits"].encode())
-        byte_num = str(len(edit))
-        response += ("\r\nContent Length: " + byte_num).encode()
 
-        response += "\r\n\r\n".encode() + edit
+        if ("Auth Token" in request.cookies) and (request.cookies["Auth Token"] != ""):
+            sha256 = hashlib.sha256()
+            sha256.update(request.cookies["Auth Token"].encode())
+            hashing = sha256.hexdigest()
+
+            find_user = user_collection.find_one({"authtoken": hashing})
+
+            find_xsrf = xsrf_collection.find_one({"username": find_user["username"]})
+            if find_xsrf is None:
+                xsrf_token = self.create_xsrf()
+                store_this = {"username": find_user["username"], "xsrftoken": xsrf_token}
+                xsrf_collection.insert_one(store_this)
+
+            find_xsrf_again = xsrf_collection.find_one({"username": find_user["username"]})
+            edited = edit.replace("{{xsrf-token}}".encode(), find_xsrf_again["xsrftoken"].encode())
+            byte_num = str(len(edited))
+            response += ("\r\nContent Length: " + byte_num).encode()
+
+            response += "\r\n\r\n".encode() + edited
+        else:
+            byte_num = str(len(edit))
+            response += ("\r\nContent Length: " + byte_num).encode()
+
+            response += "\r\n\r\n".encode() + edit
 
         return response
+
+    def create_xsrf(self):
+        big_list = list(string.ascii_letters + string.digits)
+        i = 0
+        xsrf_token = ""
+        while i != 27:
+            xsrf_token += random.choices(big_list)[0]
+            i += 1
+
+        return xsrf_token
 
     def serve_js(self, request: Request):
         response = b''
@@ -121,6 +154,7 @@ class Paths:
 
         response += (request.http_version + " 200 OK\r\n").encode()
 
+        request.headers.pop("Content-Length")
         for header in request.headers:
             response += (header + ": " + request.headers[header] + "\r\n").encode()
         response += "X-Content-Type-Options: nosniff\r\n".encode()
@@ -144,9 +178,25 @@ class Paths:
             sha256.update(request.cookies["Auth Token"].encode())
             hashing = sha256.hexdigest()
             find_user = user_collection.find_one({"authtoken": hashing})
+            xsrf_token = json.dumps(the_body["xsrftoken"])
+            the_xsrf_token = xsrf_token[1:len(xsrf_token)-1]
+
             if find_user is not None:
-                store_this = {"message": message, "username": find_user["username"], "id": uniqueID}
-                chat_collection.insert_one(store_this)
+                find_user_xsrf = xsrf_collection.find_one({"username": find_user["username"]})
+                if the_xsrf_token == find_user_xsrf["xsrftoken"]:
+                    store_this = {"message": message, "username": find_user["username"], "id": uniqueID}
+                    chat_collection.insert_one(store_this)
+                else:
+                    wrong_response = b''
+                    wrong_response += (request.http_version + " 403 Forbidden\r\n").encode()
+
+                    for header in request.headers:
+                        wrong_response += (header + ": " + request.headers[header] + "\r\n").encode()
+                    wrong_response += "X-Content-Type-Options: nosniff\r\n".encode()
+
+                    wrong_response += "Content-Type: text/plain\r\nContent-Length: 20\r\n\r\nYou can not do that.".encode()
+
+                    return wrong_response
             else:
                 store_this = {"message": message, "username": "Guest", "id": uniqueID}
                 chat_collection.insert_one(store_this)
@@ -191,7 +241,7 @@ class Paths:
         if validate_password(credentials[1]):
             the_bytes = credentials[1].encode()
             the_salt = bcrypt.gensalt()
-            the_hash = bcrypt.hashpw(the_bytes,the_salt)
+            the_hash = bcrypt.hashpw(the_bytes, the_salt)
 
             store_this = {"username": credentials[0], "hash": the_hash, "authtoken": ""}
             user_collection.insert_one(store_this)
@@ -308,4 +358,3 @@ class Paths:
         response += "Content-Type: text/plain\r\nContent-Length: 54\r\n\r\nThis is an error page. Definitely not what you wanted.".encode()
 
         return response
-

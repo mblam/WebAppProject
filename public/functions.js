@@ -65,7 +65,9 @@ function sendChat() {
                 console.log(this.response);
             }
         }
-        const messageJSON = {"message": message};
+        const xsrftoken = document.getElementById("xsrf-token");
+        const theToken = xsrftoken.value.toString();
+        const messageJSON = {"message": message, "xsrftoken": theToken};
         request.open("POST", "/chat-messages");
         request.send(JSON.stringify(messageJSON));
     }
