@@ -2,11 +2,11 @@ class Request:
 
     def __init__(self, request: bytes):
         # TODO: parse the bytes of the request and populate the following instance variables
-
         decoding = request.decode()
         splitting = decoding.split('\r\n')
         split_one = splitting[0].split(' ')
-        body = splitting[-1]
+
+        end_splitting = splitting[-1]
         splitting.remove(splitting[-1])
 
         self.body = b""
@@ -15,13 +15,18 @@ class Request:
         self.http_version = split_one[2]
         splitting.remove(splitting[0])
 
+        # self.after_path = splitting  # to help with multipart parsing possibly (just in case)
+
         self.headers = {}
         self.cookies = {}
 
-        for elem in splitting:
+        been_split = decoding.split('\r\n\r\n')
+        split_headers = been_split[0].split('\r\n')
+        for elem in split_headers:
             if ("ookie" not in elem) and (":" in elem):
                 mini_split = elem.split(': ')
-                self.headers[mini_split[0]] = mini_split[1]
+                if mini_split[0] not in self.headers.keys():
+                    self.headers[mini_split[0]] = mini_split[1]
             elif "ookie" in elem:
                 self.headers[elem[:elem.index(":")]] = elem.split(": ")[1]
             else:
@@ -34,8 +39,13 @@ class Request:
                     mini_split = elem.split("=")
                     self.cookies[mini_split[0]] = mini_split[1]
 
-        if "Content-Length" in self.headers:
-            self.body += body.encode()
+        been_split.remove(been_split[0])
+        if (self.headers.get("Content-Type") is not None) and (self.headers.get("Content-Type").startswith("multipart/form-data")):
+            been_split.remove(been_split[-1])
+            for elem in been_split:
+                self.body += (elem + "\r\n\r\n").encode()
+        else:
+            self.body += end_splitting.encode()
 
 
 def test1():
@@ -74,8 +84,22 @@ def test3():
 #     #     print(elem)
 #     #     print(request.headers[elem])
 
+def test5():
+    # this test is only for testing with multipart
+    # request = Request(b'POST /form-path HTTP/1.1\r\nContent-Length: 252\r\nContent-Type: multipart/form-data; boundary=----WebKitFormBoundaryfkz9sCA6fR3CAHN4\r\n------WebKitFormBoundaryfkz9sCA6fR3CAHN4\r\nContent-Disposition: form-data; name="commenter"\r\nJesse\r\n------WebKitFormBoundaryfkz9sCA6fR3CAHN4\r\nContent-Disposition: form-data; name="comment"\r\nGood morning!\r\n------WebKitFormBoundaryfkz9sCA6fR3CAHN4--')
+    # request = Request(b'POST /form-path HTTP/1.1\r\nContent-Length: 10000\r\nContent-Type: multipart/form-data; boundary=----thisboundary\r\n\r\n------thisboundary\r\nContent-Disposition: form-data; name="commenter"\r\n\r\nJesse\r\n------thisboundary\r\nContent-Disposition: form-data; name="upload"; filename="cat.png"\r\nContent-Type: image/png\r\n\r\n<bytes_of_file>\r\n------thisboundary--')
+    request = Request(b'POST /form-path HTTP/1.1\r\nContent-Length: 9937\r\nContent-Type: multipart/form-data; boundary=----WebKitFormBoundarycriD3u6M0UuPR1ia\r\n\r\n------WebKitFormBoundarycriD3u6M0UuPR1ia\r\nContent-Disposition: form-data; name="commenter"\r\n\r\nJesse\r\n------WebKitFormBoundarycriD3u6M0UuPR1ia\r\nContent-Disposition: form-data; name="upload"; filename="discord.png"\r\nContent-Type: image/png\r\n\r\n<bytes_of_the_file>\r\n------WebKitFormBoundarycriD3u6M0UuPR1ia--\r\n\r\n')
+    print(request.body)
+    # for elem in request.headers:
+    #     print(elem + ": " + request.headers[elem])
+    print(request.headers)
+    #
+    # print(request.after_path)
+
+
 if __name__ == '__main__':
     test1()
     test2()
     test3()
     # test4()
+    # test5()
