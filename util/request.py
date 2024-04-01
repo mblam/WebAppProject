@@ -4,8 +4,9 @@ class Request:
         # TODO: parse the bytes of the request and populate the following instance variables
         decoding = request.decode()
         splitting = decoding.split('\r\n')
-        split_one = splitting[0].split(' ')
+        split_one = splitting[0].split(' ')  # To get method, path, and http version
 
+        # Getting the last item in splitting before removing it
         end_splitting = splitting[-1]
         splitting.remove(splitting[-1])
 
@@ -13,15 +14,16 @@ class Request:
         self.method = split_one[0]
         self.path = split_one[1]
         self.http_version = split_one[2]
-        splitting.remove(splitting[0])
+        splitting.remove(splitting[0])  # Removes first elem because it is no longer needed
 
         # self.after_path = splitting  # to help with multipart parsing possibly (just in case)
 
         self.headers = {}
         self.cookies = {}
 
-        been_split = decoding.split('\r\n\r\n')
-        split_headers = been_split[0].split('\r\n')
+        been_split = decoding.split('\r\n\r\n')  # To get part with only the headers
+        split_headers = been_split[0].split('\r\n')  # Getting each header on its own
+        # Loop through to get headers, while making sure all cookies are accounted for
         for elem in split_headers:
             if ("ookie" not in elem) and (":" in elem):
                 mini_split = elem.split(': ')
@@ -32,6 +34,7 @@ class Request:
             else:
                 pass
 
+        # Loop through headers to find all cookies
         for key in self.headers:
             if "ookie" in key:
                 cookies = self.headers[key].split("; ")
@@ -39,11 +42,11 @@ class Request:
                     mini_split = elem.split("=")
                     self.cookies[mini_split[0]] = mini_split[1]
 
+        # Getting the body for multipart and non-multipart
         been_split.remove(been_split[0])
         if (self.headers.get("Content-Type") is not None) and (self.headers.get("Content-Type").startswith("multipart/form-data")):
-            been_split.remove(been_split[-1])
-            for elem in been_split:
-                self.body += (elem + "\r\n\r\n").encode()
+            find_bytes = request.find(b'\r\n\r\n')
+            self.body += request[find_bytes+4:len(request)-4]
         else:
             self.body += end_splitting.encode()
 
@@ -102,4 +105,4 @@ if __name__ == '__main__':
     test2()
     test3()
     # test4()
-    # test5()
+    test5()
