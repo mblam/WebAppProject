@@ -26,7 +26,6 @@ def parse_multipart(request: Request):
     parts_list = []
 
     boundary = "--" + get_key.split("boundary=")[1]
-    parsed_multipart = the_multiparts(get_key.split("boundary=")[1], [])
     fst_bound = boundary + "\r\n"
     fin_bound = "\r\n" + boundary + "--"
     gen_bound = "\r\n" + boundary + "\r\n"
@@ -52,6 +51,8 @@ def parse_multipart(request: Request):
         new_part = individual_part(elem_dict, elem_name, elem_content)
         parts_list.append(new_part)
 
+    parsed_multipart = the_multiparts(get_key.split("boundary=")[1], parts_list)
+
     return parsed_multipart
 
 
@@ -60,13 +61,13 @@ def test1():
     testing = parse_multipart(request)
     assert testing.boundary == "----WebKitFormBoundarycriD3u6M0UuPR1ia"
 
-#     print(testing.parts[0].headers)
-#     print(testing.parts[0].name)
-#     print(testing.parts[0].content)
-#
-#     print(testing.parts[1].headers)
-#     print(testing.parts[1].name)
-#     print(testing.parts[1].content)
+    # print(testing.parts[0].headers)
+    # print(testing.parts[0].name)
+    # print(testing.parts[0].content)
+    #
+    # print(testing.parts[1].headers)
+    # print(testing.parts[1].name)
+    # print(testing.parts[1].content)
 #
 # def test2():
 #     request = Request(b'POST /form-path HTTP/1.1\r\nContent-Length: 252\r\nContent-Type: multipart/form-data; boundary=----WebKitFormBoundaryfkz9sCA6fR3CAHN4\r\n\r\n------WebKitFormBoundaryfkz9sCA6fR3CAHN4\r\nContent-Disposition: form-data; name="commenter"\r\n\r\nJesse\r\n------WebKitFormBoundaryfkz9sCA6fR3CAHN4--\r\n\r\n')
