@@ -1,5 +1,5 @@
 from util.request import Request
-from util.the_paths import Paths
+import util.the_paths
 
 
 class individual_part:
@@ -18,7 +18,7 @@ class the_multiparts:
 
 
 def parse_multipart(request: Request):
-    paths = Paths()  # just to return error if needed
+    paths = util.the_paths.Paths()  # just to return error if needed
     get_key = request.headers.get("Content-Type", None)
     if not get_key:
         return paths.serve_error(request)
@@ -34,7 +34,7 @@ def parse_multipart(request: Request):
     splitting = data2.split(gen_bound.encode())
 
     for elem in splitting:
-        elem_split = elem.split(b'\r\n\r\n')
+        elem_split = elem.split(b'\r\n\r\n', 1)
         elem_dict = {}
         elem_content = b''
 
@@ -57,7 +57,7 @@ def parse_multipart(request: Request):
 
 
 def test1():
-    request = Request(b'POST /form-path HTTP/1.1\r\nContent-Length: 9937\r\nContent-Type: multipart/form-data; boundary=----WebKitFormBoundarycriD3u6M0UuPR1ia\r\n\r\n------WebKitFormBoundarycriD3u6M0UuPR1ia\r\nContent-Disposition: form-data; name="commenter"\r\n\r\nJesse\r\n------WebKitFormBoundarycriD3u6M0UuPR1ia\r\nContent-Disposition: form-data; name="upload"; filename="discord.png"\r\nContent-Type: image/png\r\n\r\n<bytes_of_the_file>\r\n------WebKitFormBoundarycriD3u6M0UuPR1ia--\r\n\r\n')
+    request = Request(b'POST /form-path HTTP/1.1\r\nContent-Length: 9937\r\nContent-Type: multipart/form-data; boundary=----WebKitFormBoundarycriD3u6M0UuPR1ia\r\n\r\n------WebKitFormBoundarycriD3u6M0UuPR1ia\r\nContent-Disposition: form-data; name="commenter"\r\n\r\nJesse\r\n------WebKitFormBoundarycriD3u6M0UuPR1ia\r\nContent-Disposition: form-data; name="upload"; filename="discord.png"\r\nContent-Type: image/png\r\n\r\n<bytes_of_\r\n\r\nthe_file>\r\n------WebKitFormBoundarycriD3u6M0UuPR1ia--\r\n\r\n')
     testing = parse_multipart(request)
     assert testing.boundary == "----WebKitFormBoundarycriD3u6M0UuPR1ia"
 
@@ -77,8 +77,14 @@ def test2():
     # print(testing.parts)
     # print(testing.parts[0].headers)
     # print(testing.parts[0].content)
+    # print(testing.parts[0].name)
 
+def test3():
+    request = Request(b'POST /form-path HTTP/1.1\r\nHost: localhost:8080\r\nConnection: keep-alive\r\nContent-Length: 673\r\nCache-Control: max-age=0\r\nsec-ch-ua: "Google Chrome";v="123", "Not:A-Brand";v="8", "Chromium";v="123"\r\nsec-ch-ua-mobile: ?0\r\nsec-ch-ua-platform: "Windows"\r\nUpgrade-Insecure-Requests: 1\r\nOrigin: http://localhost:8080\r\nContent-Type: multipart/form-data; boundary=----WebKitFormBoundarydzEiGtKXmrZVnEAJ\r\nUser-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/123.0.0.0 Safari/537.36\r\nAccept: text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7\r\nSec-Fetch-Site: same-origin\r\nSec-Fetch-Mode: navigate\r\nSec-Fetch-User: ?1\r\nSec-Fetch-Dest: document\r\nReferer: http://localhost:8080/\r\nAccept-Encoding: gzip, deflate, br, zstd\r\nAccept-Language: en-US,en;q=0.9\r\nCookie: Pycharm-12a42513=00d92b2d-f7fb-4bb8-9356-e0b6e3929d15; visits=2\r\ndnt: 1\r\nsec-gpc: 1\r\n\r\n------WebKitFormBoundarydzEiGtKXmrZVnEAJ\r\nContent-Disposition: form-data; name="upload"; filename="elephant-small.jpg"\r\nContent-Type: image/jpeg\r\n\r\n\xff\xd8\xff\xe0\x00\x10JFIF\x00\x01\x01\x00\x00\x01\x00\x01\x00\x00\xff\xdb\x00\x84\x00\x10\x10\x10\x10\x11\x10\x12\x14\x14\x12\x19\x1b\x18\x1b\x19%"\x1f\x1f"%8(+(+(8U5>55>5UK[JEJ[K\x87j^^j\x87\x9c\x83|\x83\x9c\xbd\xa9\xa9\xbd\xee\xe2\xee\xff\xff\xff\x01\x10\x10\x10\x10\x11\x10\x12\x14\x14\x12\x19\x1b\x18\x1b\x19%"\x1f\x1f"%8(+(+(8U5>55>5UK[JEJ[K\x87j^^j\x87\x9c\x83|\x83\x9c\xbd\xa9\xa9\xbd\xee\xe2\xee\xff\xff\xff\xff\xc2\x00\x11\x08\x00\x18\x00\x18\x03\x01"\x00\x02\x11\x01\x03\x11\x01\xff\xc4\x00\x16\x00\x01\x01\x01\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x07\x04\x05\xff\xda\x00\x08\x01\x01\x00\x00\x00\x00\xd4\x8e\x9ds\x85\x0b\x8f\x90\x7f\xff\xc4\x00\x15\x01\x01\x01\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x02\xff\xda\x00\x08\x01\x02\x10\x00\x00\x00\x95?\xff\xc4\x00\x15\x01\x01\x01\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x02\xff\xda\x00\x08\x01\x03\x10\x00\x00\x00\xa9?\xff\xc4\x00&\x10\x00\x02\x01\x02\x05\x02\x07\x00\x00\x00\x00\x00\x00\x00\x00\x00\x02\x03\x04\x00\x12\x01\x05\x10\x13B"2\x14!$3\x82\x92\xa2\xff\xda\x00\x08\x01\x01\x00\x01?\x00\xccf\xcc\xdf \xbc\xd0\x03\xdbo*<\xd5\xe3\x16\xfc^^]7V\\\xf7o\xab\x055\xac\x12\xee\xbb\xf5Y\xc4_\x13\t\xb6{\x807\r \x9e\xf1\x08\xf8r=\xbf\xb5C\x84\x98J\xb1\x7f"\xc7HHh\xce\x83\xb9\x10\xd5\xea\xc8\x88\xad\xe3\xd3n\x9f\xff\xc4\x00\x14\x11\x01\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00 \xff\xda\x00\x08\x01\x02\x01\x01?\x00\x1f\xff\xc4\x00\x14\x11\x01\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00 \xff\xda\x00\x08\x01\x03\x01\x01?\x00\x1f\xff\xd9\r\n------WebKitFormBoundarydzEiGtKXmrZVnEAJ--\r\n')
+    testing = parse_multipart(request)
+    assert testing.boundary == "----WebKitFormBoundarydzEiGtKXmrZVnEAJ"
 
 if __name__ == '__main__':
     test1()
     test2()
+    test3()

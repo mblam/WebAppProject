@@ -43,13 +43,14 @@ class Request:
                     mini_split = elem.split("=")
                     self.cookies[mini_split[0]] = mini_split[1]
 
-        # Getting the body for multipart and non-multipart
-        been_split.remove(been_split[0])
         if (self.headers.get("Content-Type") is not None) and (self.headers.get("Content-Type").startswith("multipart/form-data")):
             find_bytes = request.find(b'\r\n\r\n')
             self.body += request[find_bytes+4:len(request)-4]
         else:
             self.body += request[find_bytes+4:len(request)]
+
+    def add_to_body(self, data):
+        self.body += data
 
 
 def test1():

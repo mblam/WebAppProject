@@ -2,6 +2,7 @@ from util.request import Request
 from pymongo import MongoClient
 from util.auth import extract_credentials
 from util.auth import validate_password
+from util.multipart import parse_multipart
 import string
 import bcrypt
 import hashlib
@@ -179,7 +180,7 @@ class Paths:
             hashing = sha256.hexdigest()
             find_user = user_collection.find_one({"authtoken": hashing})
             xsrf_token = json.dumps(the_body["xsrftoken"])
-            the_xsrf_token = xsrf_token[1:len(xsrf_token)-1]
+            the_xsrf_token = xsrf_token[1:len(xsrf_token) - 1]
 
             if find_user is not None:
                 find_user_xsrf = xsrf_collection.find_one({"username": find_user["username"]})
@@ -343,6 +344,59 @@ class Paths:
             response += "X-Content-Type-Options: nosniff\r\n".encode()
 
             response += "Content-Type: text/plain\r\nContent-Length: 20\r\n\r\nYou can not do that.".encode()
+
+        return response
+
+    def post_image(self, request: Request):
+        the_multipart = parse_multipart(request)
+        response = b''
+        response += (request.http_version + " 302 Found\r\n").encode()
+
+        request.headers.pop("Host")
+        request.headers["Content-Length"] = "0"
+        for header in request.headers:
+            response += (header + ": " + request.headers[header] + "\r\n").encode()
+        response += "X-Content-Type-Options: nosniff\r\n".encode()
+
+        big_list = list(string.ascii_letters + string.digits)
+        i = 0
+        an_id = ""
+        while i != 10:
+            an_id += random.choices(big_list)[0]
+            i += 1
+        filename = "media" + an_id
+
+        for part in the_multipart.parts:
+            if part.headers.get("Content-Type") == "image/jpeg":
+                filename += ".jpg"
+                break
+
+        save_file = open("./public/image/" + filename, "wb")
+        for part in the_multipart.parts:
+            if part.headers.get("Content-Type") == "image/jpeg":
+                save_file.write(part.content)
+        save_file.close()
+
+        if ("Auth Token" not in request.cookies.keys()) or (request.cookies["Auth Token"] == ""):
+            store_this = {"message": "<img src=\"/public/image/" + filename + "\" HEIGHT=150 alt=\"an image\" class=\"my_image\"/>",
+                          "username": "Guest", "id": an_id}
+            chat_collection.insert_one(store_this)
+        elif ("Auth Token" in request.cookies.keys()) and (request.cookies["Auth Token"] != ""):
+            sha256 = hashlib.sha256()
+            sha256.update(request.cookies["Auth Token"].encode())
+            hashing = sha256.hexdigest()
+            find_user = user_collection.find_one({"authtoken": hashing})
+
+            if find_user is not None:
+                store_this = {"message": "<img src=\"" + filename + "\" alt=\"an image\" class=\"my_image\"/>",
+                              "username": find_user["username"], "id": an_id}
+                chat_collection.insert_one(store_this)
+            else:
+                store_this = {"message": "<img src=\"" + filename + "\" alt=\"an image\" class=\"my_image\"/>",
+                              "username": "Guest", "id": an_id}
+                chat_collection.insert_one(store_this)
+
+        response += "Content-Type: multipart/form-data\r\nLocation: /\r\n\r\n".encode()
 
         return response
 

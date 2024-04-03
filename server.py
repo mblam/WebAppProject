@@ -21,6 +21,7 @@ class MyTCPHandler(socketserver.BaseRequestHandler):
     router.add_route("GET", "/public/style.css$", paths.serve_css)
 
     router.add_route("GET", "/public/image/.", paths.serve_image)
+    router.add_route("POST", "/form-path$", paths.post_image)
 
     router.add_route("GET", "/public/functions.js$", paths.serve_js)
     router.add_route("GET", "/public/webrtc.js$", paths.serve_js)
@@ -40,6 +41,15 @@ class MyTCPHandler(socketserver.BaseRequestHandler):
         print(received_data)
         print("--- end of data ---\n\n")
         request = Request(received_data)
+
+        if request.headers.get("Content-Length") is not None:
+            total_len = int(request.headers["Content-Length"])
+            curr_len = len(request.body)
+
+            while curr_len < total_len:
+                new_req = self.request.recv(min(2048, total_len - curr_len))
+                curr_len += min(2048, total_len - curr_len)
+                request.add_to_body(new_req.body)
 
         # TODO: Parse the HTTP request and use self.request.sendall(response) to send your response
         response = self.router.route_request(request)

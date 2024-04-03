@@ -42,7 +42,12 @@
             </label>
             <button id="chat-button" onclick="sendChat()">Send</button>
         </div>
-
+        <form action="/form-path" method="post" enctype="multipart/form-data">
+            <label>File:
+                <input type="file" name="upload">
+            </label>
+            <input type="submit" value="Post">
+        </form>
     </div>
 
     <div class="video-chat">
