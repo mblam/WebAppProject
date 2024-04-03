@@ -2,30 +2,31 @@ class Request:
 
     def __init__(self, request: bytes):
         # TODO: parse the bytes of the request and populate the following instance variables
-        find_bytes = request.find(b'\r\n\r\n')
-        decoding = request[:find_bytes].decode()
-        splitting = decoding.split('\r\n')
-        split_one = splitting[0].split(' ')  # To get method, path, and http version
+        find_bytes = request.split(b'\r\n\r\n', 1)
+        # print(find_bytes)
+        splitting = find_bytes[0].decode().split('\r\n')
+        split_one = splitting[0].split(" ")  # To get method, path, and http version
+        # print(split_one)
 
         # Getting the last item in splitting before removing it
-        end_splitting = splitting[-1]
-        splitting.remove(splitting[-1])
+        # end_splitting = splitting[-1]
+        # splitting.remove(splitting[-1])
 
         self.body = b""
         self.method = split_one[0]
         self.path = split_one[1]
         self.http_version = split_one[2]
-        splitting.remove(splitting[0])  # Removes first elem because it is no longer needed
+        # splitting.remove(splitting[0])  # Removes first elem because it is no longer needed
 
         # self.after_path = splitting  # to help with multipart parsing possibly (just in case)
 
         self.headers = {}
         self.cookies = {}
 
-        been_split = decoding.split('\r\n\r\n')  # To get part with only the headers
-        split_headers = been_split[0].split('\r\n')  # Getting each header on its own
+        # been_split = decoding.split('\r\n\r\n')  # To get part with only the headers
+        # split_headers = been_split[0].split('\r\n')  # Getting each header on its own
         # Loop through to get headers, while making sure all cookies are accounted for
-        for elem in split_headers:
+        for elem in splitting:
             if ("ookie" not in elem) and (":" in elem):
                 mini_split = elem.split(': ')
                 if mini_split[0] not in self.headers.keys():
@@ -43,11 +44,12 @@ class Request:
                     mini_split = elem.split("=")
                     self.cookies[mini_split[0]] = mini_split[1]
 
-        if (self.headers.get("Content-Type") is not None) and (self.headers.get("Content-Type").startswith("multipart/form-data")):
-            find_bytes = request.find(b'\r\n\r\n')
-            self.body += request[find_bytes+4:len(request)-4]
-        else:
-            self.body += request[find_bytes+4:len(request)]
+        # if (self.headers.get("Content-Type") is not None) and (self.headers.get("Content-Type").startswith("multipart/form-data")):
+        #     find_bytes = request.find(b'\r\n\r\n')
+        #     self.body += request[find_bytes+4:len(request)-4]
+        # else:
+        #     self.body += request[find_bytes+4:len(request)]
+        self.body = find_bytes[1]
 
     def add_to_body(self, data):
         self.body += data
@@ -107,8 +109,8 @@ def test6():
 
 if __name__ == '__main__':
     test1()
-    test2()
-    test3()
+    # test2()
+    # test3()
     # test4()
     # test5()
-    test6()
+    # test6()

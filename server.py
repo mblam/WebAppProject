@@ -41,15 +41,17 @@ class MyTCPHandler(socketserver.BaseRequestHandler):
         print(received_data)
         print("--- end of data ---\n\n")
         request = Request(received_data)
+        bytes_read = received_data
 
-        if request.headers.get("Content-Length") is not None:
+        if "Content-Type" in request.headers and "multipart" in request.headers.get("Content-Type"):
             total_len = int(request.headers["Content-Length"])
             curr_len = len(request.body)
 
             while curr_len < total_len:
-                new_req = self.request.recv(min(2048, total_len - curr_len))
-                curr_len += min(2048, total_len - curr_len)
-                request.add_to_body(new_req.body)
+                bytes_read += self.request.recv(2048)
+                curr_len = len(bytes_read)
+
+            request = Request(bytes_read)
 
         # TODO: Parse the HTTP request and use self.request.sendall(response) to send your response
         response = self.router.route_request(request)
