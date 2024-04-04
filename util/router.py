@@ -21,6 +21,8 @@ class Router:
         for elem in self.all_routes:
             split = elem.split(" ")
             if re.match(split[0], the_request.method):
+                if re.match(split[1], "/public/image/."):
+                    the_request.path = the_request.path[0:14] + the_request.path[14:].replace("/", "")
                 if re.match(split[1], the_request.path):
                     func = self.all_routes[elem]
                     response = func(the_request)

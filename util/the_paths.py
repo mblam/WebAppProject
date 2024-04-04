@@ -370,12 +370,28 @@ class Paths:
             if part.headers.get("Content-Type") == "image/jpeg":
                 filename += ".jpg"
                 break
+            elif part.headers.get("Content-Type") == "video/mp4":
+                filename += ".mp4"
+                break
 
         save_file = open("./public/image/" + filename, "wb")
         for part in the_multipart.parts:
             if part.headers.get("Content-Type") == "image/jpeg":
                 save_file.write(part.content)
+            elif part.headers.get("Content-Type") == "video/mp4":
+                save_file.write(part.content)
         save_file.close()
+
+        if filename.endswith(".jpg"):
+            self.for_images(request, an_id, filename)
+        elif filename.endswith(".mp4"):
+            self.for_videos(request, an_id, filename)
+
+        response += "Content-Type: multipart/form-data\r\nLocation: /\r\n\r\n".encode()
+
+        return response
+
+    def for_images(self, request: Request, an_id: str, filename: str):
 
         if ("Auth Token" not in request.cookies.keys()) or (request.cookies["Auth Token"] == ""):
             store_this = {"message": "<img src=\"/public/image/" + filename + "\" HEIGHT=150 alt=\"an image\" class=\"my_image\"/>",
@@ -388,17 +404,33 @@ class Paths:
             find_user = user_collection.find_one({"authtoken": hashing})
 
             if find_user is not None:
-                store_this = {"message": "<img src=\"" + filename + "\" alt=\"an image\" class=\"my_image\"/>",
+                store_this = {"message": "<img src=\"/public/image/" + filename + "\" HEIGHT=150 alt=\"an image\" class=\"my_image\"/>",
                               "username": find_user["username"], "id": an_id}
                 chat_collection.insert_one(store_this)
             else:
-                store_this = {"message": "<img src=\"" + filename + "\" alt=\"an image\" class=\"my_image\"/>",
+                store_this = {"message": "<img src=\"/public/image/" + filename + "\" HEIGHT=150 alt=\"an image\" class=\"my_image\"/>",
                               "username": "Guest", "id": an_id}
                 chat_collection.insert_one(store_this)
 
-        response += "Content-Type: multipart/form-data\r\nLocation: /\r\n\r\n".encode()
+    def for_videos(self, request: Request, an_id: str, filename: str):
 
-        return response
+        video_message = "<video width=\"400\" controls autoplay muted> <source src=\"/public/image/" + filename.replace("mp4", "mpd") + "\" type=\"application/x-mpegURL\"> <source src=\"/public/image/" + filename.replace("mp4", "m3u8") + "\" type=\"video/hls\"> <source src=\"/public/image/" + filename + "\" type=\"video/mp4\"> Your browser does not support video playback </video>"
+
+        if ("Auth Token" not in request.cookies.keys()) or (request.cookies["Auth Token"] == ""):
+            store_this = {"message": video_message, "username": "Guest", "id": an_id}
+            chat_collection.insert_one(store_this)
+        elif ("Auth Token" in request.cookies.keys()) and (request.cookies["Auth Token"] != ""):
+            sha256 = hashlib.sha256()
+            sha256.update(request.cookies["Auth Token"].encode())
+            hashing = sha256.hexdigest()
+            find_user = user_collection.find_one({"authtoken": hashing})
+
+            if find_user is not None:
+                store_this = {"message": video_message, "username": find_user["username"], "id": an_id}
+                chat_collection.insert_one(store_this)
+            else:
+                store_this = {"message": video_message, "username": "Guest", "id": an_id}
+                chat_collection.insert_one(store_this)
 
     def serve_error(self, request: Request):
         response = b''

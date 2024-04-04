@@ -51,9 +51,6 @@ class Request:
         #     self.body += request[find_bytes+4:len(request)]
         self.body = find_bytes[1]
 
-    def add_to_body(self, data):
-        self.body += data
-
 
 def test1():
     request = Request(b'GET / HTTP/1.1\r\nHost: localhost:8080\r\nConnection: keep-alive\r\n\r\n')
