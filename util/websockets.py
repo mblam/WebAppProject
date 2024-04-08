@@ -15,7 +15,7 @@ def compute_accept(key: str):
     sha1 = hashlib.sha1()
     hash_this = key + "258EAFA5-E914-47DA-95CA-C5AB0DC85B11"
     sha1.update(hash_this.encode())
-    hashing = sha1.hexdigest()
+    hashing = sha1.digest()
     encoded = base64.b64encode(hashing)
 
     return encoded.decode()
