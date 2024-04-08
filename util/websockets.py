@@ -18,7 +18,7 @@ def compute_accept(key: str):
     hashing = sha1.hexdigest()
     encoded = base64.b64encode(hashing)
 
-    return str(encoded)
+    return encoded.decode()
 
 
 def parse_ws_frame(ws_bytes: bytearray):
