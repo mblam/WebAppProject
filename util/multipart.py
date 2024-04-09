@@ -27,7 +27,7 @@ def parse_multipart(request: Request):
         error_response += "Content-Type: text/plain\r\nContent-Length: 54\r\n\r\nThis is an error page. Definitely not what you wanted.".encode()
         return error_response
 
-    parts_list = []
+    parts_list = []  # a list for the parts of the multipart
 
     boundary = "--" + get_key.split("boundary=")[1]
     fst_bound = boundary + "\r\n"
@@ -47,10 +47,15 @@ def parse_multipart(request: Request):
             if ": ".encode() in item:
                 elem_dict[item.split(": ".encode())[0].decode()] = item.split(": ".encode())[1].decode()
 
-        # find_bytes = elem.find(b'\r\n\r\n')
         elem_content += elem_split[1]
 
-        elem_name = elem_dict["Content-Disposition"].split('"')[1]
+        # print(elem_dict["Content-Disposition"])
+        i = 17
+        elem_name = ""
+        while elem_dict["Content-Disposition"][i] != '"':
+            elem_name += elem_dict["Content-Disposition"][i]
+            i += 1
+        # print(elem_name)
 
         new_part = individual_part(elem_dict, elem_name, elem_content)
         parts_list.append(new_part)
