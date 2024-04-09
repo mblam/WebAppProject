@@ -22,12 +22,21 @@ def compute_accept(key: str):
 
 
 def parse_ws_frame(ws_bytes: bytearray):
-    the_bytes = ws_bytes.decode('utf-8').encode('utf-8')
     
-    pass
+    
+    return 0
 
 
 def generate_ws_frame(ws_bytes):
 
     pass
 
+
+def test1():
+    my_list = [128, 150, 172, 100, 36, 106, 70]
+    test_bytes = bytearray(my_list)
+    print(test_bytes)
+    parse_ws_frame(test_bytes)
+
+if __name__ == '__main__':
+    test1()

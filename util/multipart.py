@@ -1,5 +1,5 @@
 from util.request import Request
-import util.the_paths
+
 
 
 class individual_part:
@@ -18,10 +18,14 @@ class the_multiparts:
 
 
 def parse_multipart(request: Request):
-    paths = util.the_paths.Paths()  # just to return error if needed
     get_key = request.headers.get("Content-Type", None)
     if not get_key:
-        return paths.serve_error(request)
+        error_response = (request.http_version + " 404 Not Found\r\n").encode()
+        for header in request.headers:
+            error_response += (header + ": " + request.headers[header] + "\r\n").encode()
+        error_response += "X-Content-Type-Options: nosniff\r\n".encode()
+        error_response += "Content-Type: text/plain\r\nContent-Length: 54\r\n\r\nThis is an error page. Definitely not what you wanted.".encode()
+        return error_response
 
     parts_list = []
 
