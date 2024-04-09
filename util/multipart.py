@@ -47,8 +47,8 @@ def parse_multipart(request: Request):
             if ": ".encode() in item:
                 elem_dict[item.split(": ".encode())[0].decode()] = item.split(": ".encode())[1].decode()
 
-        find_bytes = elem.find(b'\r\n\r\n')
-        elem_content += elem[find_bytes+4:]
+        # find_bytes = elem.find(b'\r\n\r\n')
+        elem_content += elem_split[1]
 
         elem_name = elem_dict["Content-Disposition"].split('"')[1]
 
