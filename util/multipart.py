@@ -49,13 +49,7 @@ def parse_multipart(request: Request):
 
         elem_content += elem_split[1]
 
-        # print(elem_dict["Content-Disposition"])
-        i = 17
-        elem_name = ""
-        while elem_dict["Content-Disposition"][i] != '"':
-            elem_name += elem_dict["Content-Disposition"][i]
-            i += 1
-        # print(elem_name)
+        elem_name = elem_dict["Content-Disposition"].split('"')[1]
 
         new_part = individual_part(elem_dict, elem_name, elem_content)
         parts_list.append(new_part)
