@@ -19,19 +19,12 @@ class the_multiparts:
 
 def parse_multipart(request: Request):
     get_key = request.headers.get("Content-Type", None)
-    if not get_key:
-        error_response = (request.http_version + " 404 Not Found\r\n").encode()
-        for header in request.headers:
-            error_response += (header + ": " + request.headers[header] + "\r\n").encode()
-        error_response += "X-Content-Type-Options: nosniff\r\n".encode()
-        error_response += "Content-Type: text/plain\r\nContent-Length: 54\r\n\r\nThis is an error page. Definitely not what you wanted.".encode()
-        return error_response
 
     parts_list = []  # a list for the parts of the multipart
 
     boundary = "--" + get_key.split("boundary=")[1]
     fst_bound = boundary + "\r\n"
-    fin_bound = "\r\n" + boundary + "--"
+    fin_bound = "\r\n" + boundary + "--\r\n"
     gen_bound = "\r\n" + boundary + "\r\n"
     data = request.body.replace(fst_bound.encode(), b'', 1)
     data2 = data.replace(fin_bound.encode(), b'')
@@ -44,17 +37,23 @@ def parse_multipart(request: Request):
 
         elem_headers = elem_split[0].split(b'\r\n')
         for item in elem_headers:
-            if ": ".encode() in item:
-                elem_dict[item.split(": ".encode())[0].decode()] = item.split(": ".encode())[1].decode()
+            if ":".encode() in item:
+                elem_dict[item.split(":".encode())[0].strip().decode()] = item.split(":".encode())[1].strip().decode()
 
-        elem_content += elem_split[1]
+        elem_content = elem_split[1]
 
         elem_name = elem_dict["Content-Disposition"].split('"')[1]
+        # print("This is what printed: ",  elem_name)
 
         new_part = individual_part(elem_dict, elem_name, elem_content)
         parts_list.append(new_part)
 
     parsed_multipart = the_multiparts(get_key.split("boundary=")[1], parts_list)
+
+    # for p in parts_list:
+    #     print("name", p.name)
+    #     print("headers", p.headers)
+    #     print("content", p.content)
 
     return parsed_multipart
 
